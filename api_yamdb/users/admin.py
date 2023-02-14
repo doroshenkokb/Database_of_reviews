@@ -6,6 +6,8 @@ from users.models import User
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
+    """Настройки раздела пользователей."""
+
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
         form.base_fields['is_active'].help_text = "Статус пользователя"
@@ -18,7 +20,7 @@ class CustomUserAdmin(UserAdmin):
         'date_joined',
         'role'
     )
-    search_fields = ('username',)
+    search_fields = ('username', 'role')
     list_editable = ('role', 'is_staff',)
     empty_value_display = '-empty-'
     ordering = ['-date_joined']
