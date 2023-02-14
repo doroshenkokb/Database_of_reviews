@@ -8,7 +8,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 from users.models import User
 from users.permissions import IsSuperUserOrIsAdminOnly
 from users.serializers import (
-    UserCreateSerializer, 
+    UserCreateSerializer,
     UserRecieveTokenSerializer,
     UserSerializer
 )
@@ -52,7 +52,6 @@ class UserReceiveTokenViewSet(mixins.CreateModelMixin,
         username = serializer.validated_data.get('username')
         confirmation_code = serializer.validated_data.get('confirmation_code')
         user = get_object_or_404(User, username=username)
-
         if not default_token_generator.check_token(user, confirmation_code):
             message = {'confirmation_code': 'Код подтверждения невалиден'}
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
@@ -100,8 +99,10 @@ class UserViewSet(mixins.ListModelMixin,
         permission_classes=(permissions.IsAuthenticated,)
     )
     def get_me_data(self, request):
-        """Позволяет пользователю получить подробную информацию о себе
-        и редактировать её."""
+        """
+        Позволяет пользователю получить подробную
+        информацию о себе и редактировать её.
+        """
         if request.method == 'PATCH':
             serializer = UserSerializer(
                 request.user, data=request.data,

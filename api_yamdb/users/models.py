@@ -31,7 +31,7 @@ class User(AbstractUser):
     confirmation_code = models.CharField(
         max_length=30,
         verbose_name='код подтверждения',
-        blank=True, 
+        blank=True,
         null=True
     )
     first_name = models.CharField(
@@ -54,10 +54,10 @@ class User(AbstractUser):
         choices=ROLE,
         default='user'
     )
-    
+
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
-    
+
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
@@ -77,7 +77,7 @@ class User(AbstractUser):
     @property
     def is_user(self):
         return True if not self.is_staff else None
-    
+
     def save(self, *args, **kwargs):
         if self.role == self.is_admin:
             self.is_staff = True
