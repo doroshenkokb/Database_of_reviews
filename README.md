@@ -67,6 +67,6 @@
 
 #### Авторы
 
-Дорошенко Кирилл - [https://github.com/TroutBBBoy](https://github.com/TroutBBBoy)    
+Дорошенко Кирилл - [https://github.com/TroutBBBoy](https://github.com/TroutBBBoy)
 Андрей Ермолин - [https://github.com/temp913](https://github.com/temp913)
 Александр Розинков - [https://github.com/Xiba21](https://github.com/Xiba21)
