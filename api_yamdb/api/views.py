@@ -16,10 +16,11 @@ from .serializers import (
     UserCreateSerializer,
     UserRecieveTokenSerializer,
     UserSerializer,
-    ReviewSerializer
+    ReviewSerializer,
+    CommentsSerializer
 )
 from .confirmation_code import send_confirmation_code
-from reviews.models import Review
+from reviews.models import Review, Comments
 
 
 class UserCreateViewSet(mixins.CreateModelMixin,
@@ -138,3 +139,19 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         serializer.save(author=self.request.user)
+
+
+class CommentsViewSet(viewsets.ModelViewSet):
+    serializer_class = CommentsSerializer
+    permission_classes = (
+        permissions.IsAuthenticatedOrReadOnly,
+        IsSuperUserIsAdminIsModeratorIsAuthor
+    )
+
+    def get_queryset(self):
+        review = get_object_or_404(Review, id=self.kwargs.get('review_id'))
+        return review.comments.all()
+
+    def perform_create(self, serializer):
+        review = get_object_or_404(Review, id=self.kwargs.get('review_id'))
+        serializer.save(author=self.request.user, review=review)
