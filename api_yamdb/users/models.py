@@ -64,7 +64,7 @@ class User(AbstractUser):
         ordering = ('id',)
 
     def __str__(self):
-        return self.username
+        return self.username[:15]
 
     @property
     def is_admin(self):
