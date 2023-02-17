@@ -1,18 +1,31 @@
 from django.contrib.auth.tokens import default_token_generator
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework.pagination import PageNumberPagination
+
+from .mixins import CreateListDestroyViewSet
+from .filters import TitleFilter
 
 from users.models import User
-from users.permissions import IsSuperUserOrIsAdminOnly
-from users.serializers import (
-    UserCreateSerializer,
-    UserRecieveTokenSerializer,
+from .permissions import (
+    AnonimReadOnly,
+    IsSuperUserIsAdminIsModeratorIsAuthor,
+    IsSuperUserOrIsAdminOnly
+)
+from .serializers import (
+    CategorySerializer, CommentsSerializer,
+    GenreSerializer, ReviewSerializer,
+    TitleGETSerializer, TitleSerializer,
+    UserCreateSerializer, UserRecieveTokenSerializer,
     UserSerializer
 )
 from .confirmation_code import send_confirmation_code
+from reviews.models import Review, Category, Genre, Title
 
 
 class UserCreateViewSet(mixins.CreateModelMixin,
@@ -24,8 +37,10 @@ class UserCreateViewSet(mixins.CreateModelMixin,
     permission_classes = (permissions.AllowAny,)
 
     def create(self, request):
-        """Создает объект класса User и
-        отправляет на почту пользователя код подтверждения."""
+        """
+        Создает объект класса User и отправляет
+        на почту пользователя код подтверждения.
+        """
         serializer = UserCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user, _ = User.objects.get_or_create(**serializer.validated_data)
@@ -113,3 +128,66 @@ class UserViewSet(mixins.ListModelMixin,
             return Response(serializer.data, status=status.HTTP_200_OK)
         serializer = UserSerializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+    pagination_class = PageNumberPagination
+    permission_classes = (
+        permissions.IsAuthenticatedOrReadOnly,
+        IsSuperUserIsAdminIsModeratorIsAuthor
+    )
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save(author=self.request.user)
+
+
+class CommentsViewSet(viewsets.ModelViewSet):
+    serializer_class = CommentsSerializer
+    permission_classes = (
+        permissions.IsAuthenticatedOrReadOnly,
+        IsSuperUserIsAdminIsModeratorIsAuthor
+    )
+
+    def get_queryset(self):
+        review = get_object_or_404(Review, id=self.kwargs.get('review_id'))
+        return review.comments.all()
+
+    def perform_create(self, serializer):
+        review = get_object_or_404(Review, id=self.kwargs.get('review_id'))
+        serializer.save(author=self.request.user, review=review)
+
+
+class CategoryViewSet(CreateListDestroyViewSet):
+    """Вьюсет для создания обьектов класса Category."""
+
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+
+class GenreViewSet(CreateListDestroyViewSet):
+    """Вьюсет для создания обьектов класса Genre."""
+
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    """Вьюсет для создания обьектов класса Title."""
+
+    queryset = Title.objects.annotate(rating=Avg('reviews__score'))
+    serializer_class = TitleSerializer
+    permission_classes = (AnonimReadOnly | IsSuperUserOrIsAdminOnly,)
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = TitleFilter
+
+    def get_serializer_class(self):
+        """Определяет какой сериализатор будет использоваться
+        для разных типов запроса."""
+        if self.request.method == 'GET':
+            return TitleGETSerializer
+        return TitleSerializer

@@ -19,7 +19,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
+    'api',
     'users',
+    'reviews',
+    'django_filters'
 ]
 
 MIDDLEWARE = [
@@ -109,3 +112,6 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=5),
 }
+
+LENGTH_TEXT = 15
+LIST_PER_PAGE = 10
