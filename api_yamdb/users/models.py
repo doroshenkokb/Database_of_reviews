@@ -3,15 +3,17 @@ from django.core.validators import RegexValidator
 from django.db import models
 
 
-ROLE = (
-    ('user', 'user'),
-    ('moderator', 'moderator'),
-    ('admin', 'admin'),
-)
-
-
 class User(AbstractUser):
     """Модель пользователей."""
+
+    USER = 'user'
+    MODERATOR = 'moderator'
+    ADMIN = 'admin'
+    CHOICES = [
+        ('admin', ADMIN),
+        ('moderator', MODERATOR),
+        ('user', USER)
+    ]
 
     username = models.CharField(
         max_length=150,
@@ -51,12 +53,12 @@ class User(AbstractUser):
     role = models.CharField(
         max_length=20,
         verbose_name='роль',
-        choices=ROLE,
+        choices=CHOICES,
         default='user'
     )
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']
+    REQUIRED_FIELDS = ['username', ]
 
     class Meta:
         verbose_name = 'Пользователь'
@@ -68,11 +70,11 @@ class User(AbstractUser):
 
     @property
     def is_admin(self):
-        return self.role == 'admin'
+        return self.role == self.ADMIN
 
     @property
     def is_moderator(self):
-        return self.role == 'moderator'
+        return self.role == self.MODERATOR
 
     @property
     def is_user(self):

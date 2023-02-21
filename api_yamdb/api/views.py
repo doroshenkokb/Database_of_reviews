@@ -1,11 +1,14 @@
 from django.contrib.auth.tokens import default_token_generator
 from django.shortcuts import get_object_or_404
 from rest_framework import filters, mixins, permissions, status, viewsets
+from django.db.models import Avg
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework.pagination import PageNumberPagination
 
+from .filters import TitleFilter
+from .mixins import CreateListDestroyViewSet
 from users.models import User
 from .permissions import (
     AnonimReadOnly,
@@ -13,14 +16,14 @@ from .permissions import (
     IsSuperUserOrIsAdminOnly
 )
 from .serializers import (
-    UserCreateSerializer,
-    UserRecieveTokenSerializer,
-    UserSerializer,
-    ReviewSerializer,
-    CommentsSerializer
+    CategorySerializer, CommentsSerializer,
+    GenreSerializer, ReviewSerializer,
+    TitleGETSerializer, TitleSerializer,
+    UserCreateSerializer, UserRecieveTokenSerializer,
+    UserSerializer
 )
 from .confirmation_code import send_confirmation_code
-from reviews.models import Review, Comments
+from reviews.models import Category, Genre, Review, Title
 
 
 class UserCreateViewSet(mixins.CreateModelMixin,
@@ -33,10 +36,26 @@ class UserCreateViewSet(mixins.CreateModelMixin,
 
     def create(self, request):
         """
-        Создает объект класса User и отправляет 
+        Создает объект класса User и отправляет
         на почту пользователя код подтверждения.
         """
         serializer = UserCreateSerializer(data=request.data)
+        if User.objects.filter(
+            username=request.data.get('username'),
+            email=request.data.get('email')
+        ).exists():
+            user, _ = User.objects.get_or_create(
+                username=request.data.get('username')
+            )
+            if not _:
+                confirmation_code = default_token_generator.make_token(user)
+                user.confirmation_code = confirmation_code
+                user.save()
+                return Response(
+                    'Код подтверждения обновлен',
+                    status=status.HTTP_200_OK
+                )
+
         serializer.is_valid(raise_exception=True)
         user, _ = User.objects.get_or_create(**serializer.validated_data)
         confirmation_code = default_token_generator.make_token(user)
@@ -82,7 +101,7 @@ class UserViewSet(mixins.ListModelMixin,
 
     @action(
         detail=False,
-        methods=['get', 'patch', 'delete'],
+        methods=['post', 'get', 'patch', 'delete'],
         url_path=r'(?P<username>[\w.@+-]+)',
         url_name='get_user'
     )
@@ -109,10 +128,8 @@ class UserViewSet(mixins.ListModelMixin,
         permission_classes=(permissions.IsAuthenticated,)
     )
     def get_me_data(self, request):
-        """
-        Позволяет пользователю получить подробную
-        информацию о себе и редактировать её.
-        """
+        """Позволяет пользователю получить подробную информацию о себе
+        и редактировать её."""
         if request.method == 'PATCH':
             serializer = UserSerializer(
                 request.user, data=request.data,
@@ -125,23 +142,67 @@ class UserViewSet(mixins.ListModelMixin,
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+class CategoryViewSet(CreateListDestroyViewSet):
+    """Вьюсет для создания обьектов класса Category."""
+
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+
+class GenreViewSet(CreateListDestroyViewSet):
+    """Вьюсет для создания обьектов класса Genre."""
+
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    """Вьюсет для создания обьектов класса Title."""
+
+    queryset = Title.objects.annotate(rating=Avg('reviews__score'))
+    serializer_class = TitleSerializer
+    permission_classes = (AnonimReadOnly | IsSuperUserOrIsAdminOnly,)
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = TitleFilter
+
+    def get_serializer_class(self):
+        """Определяет какой сериализатор будет использоваться
+        для разных типов запроса."""
+        if self.request.method == 'GET':
+            return TitleGETSerializer
+        return TitleSerializer
+
+
 class ReviewViewSet(viewsets.ModelViewSet):
-    queryset = Review.objects.all()
+    """Вьюсет для обьектов модели Review."""
+
     serializer_class = ReviewSerializer
-    pagination_class = PageNumberPagination
     permission_classes = (
         permissions.IsAuthenticatedOrReadOnly,
         IsSuperUserIsAdminIsModeratorIsAuthor
     )
 
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+    def get_title(self):
+        """Возвращает объект текущего произведения."""
+        title_id = self.kwargs.get('title_id')
+        return get_object_or_404(Title, pk=title_id)
 
-    def perform_update(self, serializer):
-        serializer.save(author=self.request.user)
+    def get_queryset(self):
+        """Возвращает queryset c отзывами для текущего произведения."""
+        return self.get_title().reviews.all()
+
+    def perform_create(self, serializer):
+        """Создает отзыв для текущего произведения,
+        где автором является текущий пользователь."""
+        serializer.save(
+            author=self.request.user,
+            title=self.get_title()
+        )
 
 
 class CommentsViewSet(viewsets.ModelViewSet):
+    """Вьюсет для обьектов модели Comment."""
+
     serializer_class = CommentsSerializer
     permission_classes = (
         permissions.IsAuthenticatedOrReadOnly,
@@ -149,9 +210,15 @@ class CommentsViewSet(viewsets.ModelViewSet):
     )
 
     def get_queryset(self):
-        review = get_object_or_404(Review, id=self.kwargs.get('review_id'))
+        review = get_object_or_404(
+            Review, id=self.kwargs['review_id'],
+            title__id=self.kwargs['title_id']
+        )
         return review.comments.all()
 
     def perform_create(self, serializer):
-        review = get_object_or_404(Review, id=self.kwargs.get('review_id'))
+        review = get_object_or_404(
+            Review, id=self.kwargs['review_id'],
+            title__id=self.kwargs['title_id']
+        )
         serializer.save(author=self.request.user, review=review)
