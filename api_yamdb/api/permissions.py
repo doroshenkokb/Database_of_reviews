@@ -17,7 +17,7 @@ class IsSuperUserOrIsAdminOnly(permissions.BasePermission):
 
 
 class AnonimReadOnly(permissions.BasePermission):
-    """Безопасны запросы для анонимного юзера."""
+    """Разрешает анонимному пользователю только безопасные запросы."""
 
     def has_permission(self, request, view):
         return request.method in permissions.SAFE_METHODS
