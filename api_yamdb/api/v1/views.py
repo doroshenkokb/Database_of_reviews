@@ -165,7 +165,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         """Определяет какой сериализатор будет использоваться
         для разных типов запроса."""
-        if self.request.method == 'GET':
+        if self.action in ('list', 'retrieve'):
             return TitleGETSerializer
         return TitleSerializer
 
