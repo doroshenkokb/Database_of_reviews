@@ -2,8 +2,9 @@ from django.contrib.auth.tokens import default_token_generator
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, mixins, permissions, status, viewsets
-from rest_framework.decorators import action, api_view
+from rest_framework import filters, permissions, status, viewsets
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 from reviews.models import Category, Genre, Review, Title
@@ -22,73 +23,55 @@ from .serializers import (CategorySerializer, CommentsSerializer,
 from .utils import send_confirmation_code
 
 
-class UserCreateViewSet(mixins.CreateModelMixin,
-                        viewsets.GenericViewSet):
-    """Вьюсет для создания обьектов класса User."""
-
-    queryset = User.objects.all()
-    serializer_class = UserCreateSerializer
-    permission_classes = (permissions.AllowAny,)
-
-    def create(self, request):
-        """
-        Создает объект класса User и отправляет
-        на почту пользователя код подтверждения.
-        """
-        serializer = UserCreateSerializer(data=request.data)
-        if User.objects.filter(
-            username=request.data.get('username'),
-            email=request.data.get('email')
-        ).exists():
-            user, _ = User.objects.get_or_create(
-                username=request.data.get('username')
-            )
-            if not _:
-                confirmation_code = default_token_generator.make_token(user)
-                send_confirmation_code(
-                    email=user.email,
-                    confirmation_code=confirmation_code
-                )
-                return Response(
-                    'Код подтверждения обновлен',
-                    status=status.HTTP_200_OK
-                )
-
-        serializer.is_valid(raise_exception=True)
-        user, _ = User.objects.get_or_create(**serializer.validated_data)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def create(request):
+    """
+    Создает объект класса User и отправляет
+    на почту пользователя код подтверждения.
+    """
+    serializer = UserCreateSerializer(data=request.data)
+    if User.objects.filter(
+        username=request.data.get('username'),
+        email=request.data.get('email')
+    ).exists():
+        user = User.objects.get(username=request.data.get('username'))
         confirmation_code = default_token_generator.make_token(user)
         send_confirmation_code(
             email=user.email,
             confirmation_code=confirmation_code
         )
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(
+            'Код подтверждения обновлен',
+            status=status.HTTP_200_OK
+        )
+    serializer.is_valid(raise_exception=True)
+    user, _ = User.objects.get_or_create(**serializer.validated_data)
+    confirmation_code = default_token_generator.make_token(user)
+    send_confirmation_code(
+        email=user.email,
+        confirmation_code=confirmation_code
+    )
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class UserReceiveTokenViewSet(mixins.CreateModelMixin,
-                              viewsets.GenericViewSet):
-    """Вьюсет для получения пользователем JWT токена."""
-
-    queryset = User.objects.all()
-    serializer_class = UserRecieveTokenSerializer
-    permission_classes = (permissions.AllowAny,)
-
-    def create(self, request, *args, **kwargs):
-        """Предоставляет пользователю JWT токен по коду подтверждения."""
-        serializer = UserRecieveTokenSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        username = serializer.validated_data.get('username')
-        confirmation_code = serializer.validated_data.get('confirmation_code')
-        user = get_object_or_404(User, username=username)
-        if not default_token_generator.check_token(user, confirmation_code):
-            message = {'confirmation_code': 'Код подтверждения невалиден'}
-            return Response(message, status=status.HTTP_400_BAD_REQUEST)
-        message = {'token': AccessToken.for_user(user)}
-        return Response(message, status=status.HTTP_200_OK)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def get_token(request):
+    """Предоставляет пользователю JWT токен по коду подтверждения."""
+    serializer = UserRecieveTokenSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    username = serializer.validated_data.get('username')
+    confirmation_code = serializer.validated_data.get('confirmation_code')
+    user = get_object_or_404(User, username=username)
+    if not default_token_generator.check_token(user, confirmation_code):
+        message = {'confirmation_code': 'Код подтверждения невалиден'}
+        return Response(message, status=status.HTTP_400_BAD_REQUEST)
+    message = {'token': AccessToken.for_user(user)}
+    return Response(message, status=status.HTTP_200_OK)
 
 
-class UserViewSet(mixins.ListModelMixin,
-                  mixins.CreateModelMixin,
-                  viewsets.GenericViewSet):
+class UserViewSet(viewsets.ModelViewSet):
     """Вьюсет для обьектов модели User."""
 
     queryset = User.objects.all()
@@ -162,6 +145,10 @@ class TitleViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
 
+    @action(
+        detail=False,
+        methods=['post', 'get', 'delete']
+    )
     def get_serializer_class(self):
         """Определяет какой сериализатор будет использоваться
         для разных типов запроса."""

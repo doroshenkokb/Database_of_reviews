@@ -92,7 +92,7 @@ class Title(models.Model):
         related_name='titles',
         verbose_name='категория',
         null=True,
-        blank =True
+        blank=True
     )
 
     class Meta:
@@ -151,7 +151,7 @@ class Review(models.Model):
                 name='unique_author_title'
             ),
         )
-    
+
     def __str__(self):
         return self.text[:settings.LENGTH_TEXT]
 

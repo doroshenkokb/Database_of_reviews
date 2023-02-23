@@ -2,8 +2,8 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from .views import (CategoryViewSet, CommentsViewSet, GenreViewSet,
-                    ReviewViewSet, TitleViewSet, UserCreateViewSet,
-                    UserReceiveTokenViewSet, UserViewSet)
+                    ReviewViewSet, TitleViewSet, UserViewSet, create,
+                    get_token)
 
 router = DefaultRouter()
 
@@ -18,9 +18,13 @@ router.register(
     CommentsViewSet, basename='comments'
 )
 router.register('users', UserViewSet, basename='users')
-router.register('auth/signup', UserCreateViewSet, basename='sign-up')
-router.register('auth/token', UserReceiveTokenViewSet, basename='token')
+
+urlpatterns_auth = [
+    path('signup/', create, name='register_user'),
+    path('token/', get_token, name='token'),
+]
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('auth/', include(urlpatterns_auth)),
 ]

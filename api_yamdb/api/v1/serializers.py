@@ -118,9 +118,9 @@ class TitleSerializer(serializers.ModelSerializer):
             'genre',
             'category'
         )
-    
+
     def validate_year(self, year):
-        '''Валидация поля year.'''
+        """Валидация поля year."""
         if not year <= dt.datetime.today().year:
             raise serializers.ValidationError('Неверно введён год')
         return year
@@ -138,7 +138,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         slug_field='username',
         read_only=True
     )
-    
+
     class Meta:
         fields = (
             'id',
