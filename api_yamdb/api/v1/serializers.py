@@ -1,6 +1,6 @@
+import datetime as dt
+
 from rest_framework import serializers
-
-
 from reviews.models import Category, Comments, Genre, Review, Title
 from users.models import User
 
@@ -11,7 +11,8 @@ class UserCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = (
-            'username', 'email'
+            'username',
+            'email'
         )
 
     def validate(self, data):
@@ -20,6 +21,14 @@ class UserCreateSerializer(serializers.ModelSerializer):
         if data.get('username') == 'me':
             raise serializers.ValidationError(
                 'Использовать имя me запрещено'
+            )
+        if User.objects.filter(username=data.get('username')):
+            raise serializers.ValidationError(
+                'Пользователь с таким username уже существует'
+            )
+        if User.objects.filter(email=data.get('email')):
+            raise serializers.ValidationError(
+                'Пользователь с таким email уже существует'
             )
         return data
 
@@ -30,11 +39,9 @@ class UserRecieveTokenSerializer(serializers.Serializer):
     username = serializers.RegexField(
         regex=r'^[\w.@+-]+$',
         max_length=150,
-        required=True
     )
     confirmation_code = serializers.CharField(
         max_length=150,
-        required=True
     )
 
 
@@ -108,8 +115,15 @@ class TitleSerializer(serializers.ModelSerializer):
             'name',
             'year',
             'description',
-            'genre', 'category'
+            'genre',
+            'category'
         )
+    
+    def validate_year(self, year):
+        '''Валидация поля year.'''
+        if not year <= dt.datetime.today().year:
+            raise serializers.ValidationError('Неверно введён год')
+        return year
 
     def to_representation(self, title):
         """Определяет какой сериализатор будет использоваться для чтения."""
@@ -121,8 +135,19 @@ class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Review."""
 
     author = serializers.SlugRelatedField(
-        slug_field='username', read_only=True
+        slug_field='username',
+        read_only=True
     )
+    
+    class Meta:
+        fields = (
+            'id',
+            'text',
+            'author',
+            'score',
+            'pub_date'
+        )
+        model = Review
 
     def validate(self, data):
         if self.context['request'].method != 'POST':
@@ -134,16 +159,6 @@ class ReviewSerializer(serializers.ModelSerializer):
                 'Отзыв уже оставлен!'
             )
         return data
-
-    class Meta:
-        fields = (
-            'id',
-            'text',
-            'author',
-            'score',
-            'pub_date'
-        )
-        model = Review
 
 
 class CommentsSerializer(serializers.ModelSerializer):

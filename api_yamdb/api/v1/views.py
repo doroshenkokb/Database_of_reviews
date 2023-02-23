@@ -1,29 +1,25 @@
 from django.contrib.auth.tokens import default_token_generator
-from django.shortcuts import get_object_or_404
-from rest_framework import filters, mixins, permissions, status, viewsets
 from django.db.models import Avg
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.decorators import action
+from rest_framework import filters, mixins, permissions, status, viewsets
+from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
+from reviews.models import Category, Genre, Review, Title
+from users.models import User
 
 from .filters import TitleFilter
 from .mixins import CreateListDestroyViewSet
-from users.models import User
-from .permissions import (
-    AnonimReadOnly,
-    IsSuperUserIsAdminIsModeratorIsAuthor,
-    IsSuperUserOrIsAdminOnly
-)
-from .serializers import (
-    CategorySerializer, CommentsSerializer,
-    GenreSerializer, ReviewSerializer,
-    TitleGETSerializer, TitleSerializer,
-    UserCreateSerializer, UserRecieveTokenSerializer,
-    UserSerializer
-)
-from .confirmation_code import send_confirmation_code
-from reviews.models import Category, Genre, Review, Title
+from .permissions import (AnonimReadOnly,
+                          IsSuperUserIsAdminIsModeratorIsAuthor,
+                          IsSuperUserOrIsAdminOnly)
+from .serializers import (CategorySerializer, CommentsSerializer,
+                          GenreSerializer, ReviewSerializer,
+                          TitleGETSerializer, TitleSerializer,
+                          UserCreateSerializer, UserRecieveTokenSerializer,
+                          UserSerializer)
+from .utils import send_confirmation_code
 
 
 class UserCreateViewSet(mixins.CreateModelMixin,
@@ -49,8 +45,10 @@ class UserCreateViewSet(mixins.CreateModelMixin,
             )
             if not _:
                 confirmation_code = default_token_generator.make_token(user)
-                user.confirmation_code = confirmation_code
-                user.save()
+                send_confirmation_code(
+                    email=user.email,
+                    confirmation_code=confirmation_code
+                )
                 return Response(
                     'Код подтверждения обновлен',
                     status=status.HTTP_200_OK
@@ -84,7 +82,7 @@ class UserReceiveTokenViewSet(mixins.CreateModelMixin,
         if not default_token_generator.check_token(user, confirmation_code):
             message = {'confirmation_code': 'Код подтверждения невалиден'}
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
-        message = {'token': str(AccessToken.for_user(user))}
+        message = {'token': AccessToken.for_user(user)}
         return Response(message, status=status.HTTP_200_OK)
 
 
@@ -160,7 +158,6 @@ class TitleViewSet(viewsets.ModelViewSet):
     """Вьюсет для создания обьектов класса Title."""
 
     queryset = Title.objects.annotate(rating=Avg('reviews__score'))
-    serializer_class = TitleSerializer
     permission_classes = (AnonimReadOnly | IsSuperUserOrIsAdminOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter

@@ -63,7 +63,6 @@ class User(AbstractUser):
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
-        ordering = ('id',)
 
     def __str__(self):
         return self.username[:15]
@@ -78,7 +77,7 @@ class User(AbstractUser):
 
     @property
     def is_user(self):
-        return True if not self.is_staff else None
+        return self.role == self.USER
 
     def save(self, *args, **kwargs):
         if self.role == self.is_admin:

@@ -1,5 +1,4 @@
 from django_filters import rest_framework as filters
-
 from reviews.models import Title
 
 
@@ -17,10 +16,6 @@ class TitleFilter(filters.FilterSet):
     name = filters.CharFilter(
         field_name='name',
         lookup_expr='contains'
-    )
-    year = filters.NumberFilter(
-        field_name="year",
-        lookup_expr='exact'
     )
 
     class Meta:

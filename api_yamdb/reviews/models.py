@@ -1,13 +1,11 @@
 from datetime import datetime
 
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.core.validators import (
-    MaxValueValidator,
-    MinValueValidator,
-    RegexValidator
-)
 
-from users.models import User
+User = get_user_model()
 
 
 class Category(models.Model):
@@ -22,10 +20,6 @@ class Category(models.Model):
         max_length=50,
         verbose_name='slug',
         unique=True,
-        validators=[RegexValidator(
-            regex=r'^[-a-zA-Z0-9_]+$',
-            message='Слаг категории содержит недопустимый символ'
-        )]
     )
 
     class Meta:
@@ -34,14 +28,14 @@ class Category(models.Model):
         ordering = ('name',)
 
     def __str__(self):
-        return self.name[:15]
+        return self.name[:settings.LENGTH_TEXT]
 
 
 class Genre(models.Model):
     """Класс жанров."""
 
     name = models.CharField(
-        max_length=75,
+        max_length=256,
         verbose_name='Hазвание',
         db_index=True
     )
@@ -49,10 +43,6 @@ class Genre(models.Model):
         max_length=50,
         verbose_name='slug',
         unique=True,
-        validators=[RegexValidator(
-            regex=r'^[-a-zA-Z0-9_]+$',
-            message='Слаг жанра содержит недопустимый символ'
-        )]
     )
 
     class Meta:
@@ -61,18 +51,18 @@ class Genre(models.Model):
         ordering = ('name',)
 
     def __str__(self):
-        return self.name[:15]
+        return self.name[:settings.LENGTH_TEXT]
 
 
 class Title(models.Model):
     """Класс произведений."""
 
     name = models.CharField(
-        max_length=150,
+        max_length=256,
         verbose_name='Hазвание',
         db_index=True
     )
-    year = models.PositiveIntegerField(
+    year = models.PositiveSmallIntegerField(
         verbose_name='год выпуска',
         validators=[
             MinValueValidator(
@@ -80,7 +70,7 @@ class Title(models.Model):
                 message='Значение года не может быть отрицательным'
             ),
             MaxValueValidator(
-                int(datetime.now().year),
+                datetime.now().year,
                 message='Значение года не может быть больше текущего'
             )
         ],
@@ -95,14 +85,14 @@ class Title(models.Model):
         through='GenreTitle',
         related_name='titles',
         verbose_name='жанр'
-
     )
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
         related_name='titles',
         verbose_name='категория',
-        null=True
+        null=True,
+        blank =True
     )
 
     class Meta:
@@ -111,7 +101,7 @@ class Title(models.Model):
         ordering = ('-year', 'name')
 
     def __str__(self):
-        return self.name[:15]
+        return self.name[:settings.LENGTH_TEXT]
 
 
 class Review(models.Model):
@@ -126,7 +116,7 @@ class Review(models.Model):
         related_name='reviews',
         verbose_name='Aвтор'
     )
-    score = models.PositiveIntegerField(
+    score = models.PositiveSmallIntegerField(
         verbose_name='Oценка',
         validators=[
             MinValueValidator(
@@ -149,7 +139,6 @@ class Review(models.Model):
         on_delete=models.CASCADE,
         related_name='reviews',
         verbose_name='произведение',
-        null=True
     )
 
     class Meta:
@@ -162,6 +151,9 @@ class Review(models.Model):
                 name='unique_author_title'
             ),
         )
+    
+    def __str__(self):
+        return self.text[:settings.LENGTH_TEXT]
 
 
 class Comments(models.Model):
@@ -194,7 +186,7 @@ class Comments(models.Model):
         ordering = ('-pub_date',)
 
     def __str__(self):
-        return self.text[:15]
+        return self.text[:settings.LENGTH_TEXT]
 
 
 class GenreTitle(models.Model):

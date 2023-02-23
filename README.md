@@ -33,7 +33,12 @@
 ``` git clone <название репозитория> ```    
 - Установите и активируйте виртуальное окружение:  
 ``` python -m venv venv ```  
-``` source venv/Scripts/activate ``` 
+```python
+# для OS Lunix и MacOS
+source venv/bin/activate
+# для OS Windows
+source venv/Scripts/activate
+```
 - Установите зависимости из файла requirements.txt:   
 ``` pip install -r requirements.txt ```
 - Перейдите в папку api_yamdb/api_yamdb.
