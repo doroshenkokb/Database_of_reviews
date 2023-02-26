@@ -1,6 +1,7 @@
 import datetime as dt
 
 from rest_framework import serializers
+
 from reviews.models import Category, Comments, Genre, Review, Title
 from users.models import User
 
@@ -45,7 +46,7 @@ class UserRecieveTokenSerializer(serializers.Serializer):
     )
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(UserCreateSerializer):
     """Сериализатор для модели User."""
 
     class Meta:
@@ -58,6 +59,15 @@ class UserSerializer(serializers.ModelSerializer):
             'bio',
             'role'
         )
+
+    def validate_role(self, role):
+        """Запрещает пользователям изменять себе роль."""
+        try:
+            if self.instance.role != 'admin':
+                return self.instance.role
+            return role
+        except AttributeError:
+            return role
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -122,7 +132,7 @@ class TitleSerializer(serializers.ModelSerializer):
     def validate_year(self, year):
         """Валидация поля year."""
         if not year <= dt.datetime.today().year:
-            raise serializers.ValidationError('Неверно введён год')
+            raise serializers.ValidationError('Введённый год еще не настал')
         return year
 
     def to_representation(self, title):
@@ -164,7 +174,8 @@ class ReviewSerializer(serializers.ModelSerializer):
 class CommentsSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Comments."""
     author = serializers.SlugRelatedField(
-        read_only=True, slug_field='username'
+        read_only=True,
+        slug_field='username'
     )
 
     class Meta:

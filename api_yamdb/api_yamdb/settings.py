@@ -8,7 +8,10 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = os.getenv(
+    'SECRET_KEY',
+    default='p&l%385148kslhtyn^##a1)ilz@4zqj=rq&agdol^##zgl9(vs'
+)
 
 DEBUG = False
 
@@ -120,5 +123,7 @@ SIMPLE_JWT = {
 }
 
 LENGTH_TEXT = 15
+
+PAGE_LIST = 10
 
 YAMBD_MAIL = "yamdb@mail.ru"

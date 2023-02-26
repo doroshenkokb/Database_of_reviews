@@ -2,16 +2,16 @@ from django.contrib.auth.tokens import default_token_generator
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, permissions, status, viewsets
+from rest_framework import filters, permissions, status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
+
 from reviews.models import Category, Genre, Review, Title
 from users.models import User
-
 from .filters import TitleFilter
-from .mixins import CreateListDestroyViewSet
+from .mixins import AllMethodsWithoutPUTset, CreateListDestroyViewSet
 from .permissions import (AnonimReadOnly,
                           IsSuperUserIsAdminIsModeratorIsAuthor,
                           IsSuperUserOrIsAdminOnly)
@@ -41,8 +41,9 @@ def create(request):
             email=user.email,
             confirmation_code=confirmation_code
         )
+        message = {'confirmation_code': 'Код подтверждения обновлен'}
         return Response(
-            'Код подтверждения обновлен',
+            message,
             status=status.HTTP_200_OK
         )
     serializer.is_valid(raise_exception=True)
@@ -71,55 +72,32 @@ def get_token(request):
     return Response(message, status=status.HTTP_200_OK)
 
 
-class UserViewSet(viewsets.ModelViewSet):
+class UserViewSet(AllMethodsWithoutPUTset):
     """Вьюсет для обьектов модели User."""
 
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = (IsSuperUserOrIsAdminOnly,)
     filter_backends = (filters.SearchFilter,)
+    lookup_field = 'username'
     search_fields = ('username',)
 
     @action(
-        detail=False,
-        methods=['post', 'get', 'patch', 'delete'],
-        url_path=r'(?P<username>[\w.@+-]+)',
-        url_name='get_user'
-    )
-    def get_user_by_username(self, request, username):
-        """Обеспечивает получание данных пользователя по его username и
-        управление ими."""
-        user = get_object_or_404(User, username=username)
-        if request.method == 'PATCH':
-            serializer = UserSerializer(user, data=request.data, partial=True)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        elif request.method == 'DELETE':
-            user.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        serializer = UserSerializer(user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    @action(
-        detail=False,
-        methods=['get', 'patch'],
-        url_path='me',
-        url_name='me',
-        permission_classes=(permissions.IsAuthenticated,)
+        methods=('get', 'patch',), detail=False,
+        url_path='me', permission_classes=(permissions.IsAuthenticated,),
+        serializer_class=UserSerializer
     )
     def get_me_data(self, request):
-        """Позволяет пользователю получить подробную информацию о себе
-        и редактировать её."""
-        if request.method == 'PATCH':
-            serializer = UserSerializer(
-                request.user, data=request.data,
-                partial=True, context={'request': request}
-            )
-            serializer.is_valid(raise_exception=True)
-            serializer.save(role=request.user.role)
+        """Позволяет пользователю получить подробную
+        информацию о себе и редактировать её."""
+        user = request.user
+        if request.method == 'GET':
+            serializer = self.get_serializer(user)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        serializer = UserSerializer(request.user)
+        serializer = self.get_serializer(
+            user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -137,7 +115,7 @@ class GenreViewSet(CreateListDestroyViewSet):
     serializer_class = GenreSerializer
 
 
-class TitleViewSet(viewsets.ModelViewSet):
+class TitleViewSet(AllMethodsWithoutPUTset):
     """Вьюсет для создания обьектов класса Title."""
 
     queryset = Title.objects.annotate(rating=Avg('reviews__score'))
@@ -145,10 +123,6 @@ class TitleViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
 
-    @action(
-        detail=False,
-        methods=['post', 'get', 'delete']
-    )
     def get_serializer_class(self):
         """Определяет какой сериализатор будет использоваться
         для разных типов запроса."""
@@ -157,7 +131,7 @@ class TitleViewSet(viewsets.ModelViewSet):
         return TitleSerializer
 
 
-class ReviewViewSet(viewsets.ModelViewSet):
+class ReviewViewSet(AllMethodsWithoutPUTset):
     """Вьюсет для обьектов модели Review."""
 
     serializer_class = ReviewSerializer
@@ -184,7 +158,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
         )
 
 
-class CommentsViewSet(viewsets.ModelViewSet):
+class CommentsViewSet(AllMethodsWithoutPUTset):
     """Вьюсет для обьектов модели Comment."""
 
     serializer_class = CommentsSerializer

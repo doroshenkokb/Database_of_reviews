@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from rest_framework import serializers
 
 
 class User(AbstractUser):
@@ -46,3 +47,10 @@ class User(AbstractUser):
     @property
     def is_moderator(self):
         return self.role == self.MODERATOR
+
+    def validate_username(self, username):
+        if username in 'me':
+            raise serializers.ValidationError(
+                'Использовать имя me запрещено'
+            )
+        return username

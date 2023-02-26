@@ -184,6 +184,12 @@ class Comments(models.Model):
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
         ordering = ('-pub_date',)
+        constraints = (
+            models.UniqueConstraint(
+                fields=['author', 'review'],
+                name='unique_author_review'
+            ),
+        )
 
     def __str__(self):
         return self.text[:settings.LENGTH_TEXT]
