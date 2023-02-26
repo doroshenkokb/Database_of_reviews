@@ -68,7 +68,7 @@ class UserSerializer(serializers.ModelSerializer):
             return role
         except AttributeError:
             return role
-        
+
     def validate(self, data):
         """Запрещает пользователям присваивать себе имя me
         и использовать повторные username и email."""
