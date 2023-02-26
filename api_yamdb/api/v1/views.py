@@ -83,9 +83,9 @@ class UserViewSet(AllMethodsWithoutPUTset):
     search_fields = ('username',)
 
     @action(
-        methods=('get', 'patch',), 
+        methods=('get', 'patch',),
         detail=False,
-        url_path='me', 
+        url_path='me',
         permission_classes=(permissions.IsAuthenticated,),
         serializer_class=UserSerializer
     )
@@ -97,8 +97,8 @@ class UserViewSet(AllMethodsWithoutPUTset):
             serializer = self.get_serializer(user)
             return Response(serializer.data, status=status.HTTP_200_OK)
         serializer = self.get_serializer(
-            user, 
-            data=request.data, 
+            user,
+            data=request.data,
             partial=True
         )
         serializer.is_valid(raise_exception=True)
