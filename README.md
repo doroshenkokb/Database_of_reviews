@@ -1,4 +1,4 @@
-# Групповой проект студентов Яндекс.Практикум по курсу "API: интерфейс взаимодействия программ"
+# Проект Яндекс.Практикум по курсу "API: интерфейс взаимодействия программ"
 
 ## Описание
 
@@ -70,8 +70,6 @@ source venv/Scripts/activate
 
 #### Полный список запросов API находятся в документации
 
-#### Авторы
+#### Автор
 
 Дорошенко Кирилл - [https://github.com/TroutBBBoy](https://github.com/TroutBBBoy)      
-Андрей Ермолин - [https://github.com/temp913](https://github.com/temp913)     
-Александр Розинков - [https://github.com/Xiba21](https://github.com/Xiba21)
