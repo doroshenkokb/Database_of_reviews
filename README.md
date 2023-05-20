@@ -32,7 +32,7 @@
 1. Клонировать репозиторий:
 
     ```python
-    git clone https://github.com/doroshenkokb/yamdb_final.git
+    git clone https://github.com/doroshenkokb/Database_of_reviews.git
     ```
 
 2. Создать `.env` файл на уровне с файлом `docker-compose.yaml` в директории infra с указаниме данных:
