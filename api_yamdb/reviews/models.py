@@ -60,7 +60,7 @@ class Title(models.Model):
     name = models.CharField(
         max_length=256,
         verbose_name='Hазвание',
-        db_index=True
+        db_index=True,
     )
     year = models.PositiveSmallIntegerField(
         verbose_name='год выпуска',
@@ -84,7 +84,7 @@ class Title(models.Model):
         Genre,
         through='GenreTitle',
         related_name='titles',
-        verbose_name='жанр'
+        verbose_name='жанр',
     )
     category = models.ForeignKey(
         Category,
@@ -92,7 +92,7 @@ class Title(models.Model):
         related_name='titles',
         verbose_name='категория',
         null=True,
-        blank=True
+        blank=True,
     )
 
     class Meta:

@@ -1,4 +1,6 @@
-# Проект Яндекс.Практикум по курсу "API: интерфейс взаимодействия программ"
+![Test and push to Docker Hub](https://github.com/doroshenkokb/yamdb_final/actions/workflows/yamdb_workflow.yml/badge.svg)
+
+# Проект YaMDb по курсу "API: интерфейс взаимодействия программ"
 
 ## Описание
 
@@ -17,8 +19,6 @@
 - Возможность получения подробной информации о себе и удаления своего аккаунта.
 - Фильтрация по полям.
 
-#### Документация к API доступна по адресу [http://127.0.0.1:8000/redoc/](http://127.0.0.1:8000/redoc/) после запуска сервера с проектом
-
 #### Технологии
 
 - Python 3.7
@@ -27,49 +27,93 @@
 - Simple JWT
 - SQLite3
 
-#### Запуск проекта в dev-режиме
+## Установка
 
-- Склонируйте репозиторий:  
-``` git clone <название репозитория> ```    
-- Установите и активируйте виртуальное окружение:  
-``` python -m venv venv ```  
-```python
-# для OS Lunix и MacOS
-source venv/bin/activate
-# для OS Windows
-source venv/Scripts/activate
-```
-- Установите зависимости из файла requirements.txt:   
-``` pip install -r requirements.txt ```
-- Перейдите в папку api_yamdb/api_yamdb.
-- Примените миграции:   
-``` python manage.py migrate ```
-- Загрузите тестовые данные:  
-``` python manage.py load_csv_data ```
-- Выполните команду:   
-``` python manage.py runserver ```
+1. Клонировать репозиторий:
 
+    ```python
+    git clone https://github.com/doroshenkokb/yamdb_final.git
+    ```
 
-#### Примеры некоторых запросов API
+2. Создать `.env` файл на уровне с файлом `docker-compose.yaml` в директории infra с указаниме данных:
 
+    - SECRET_KEY - секретный ключ Django;
+    - DB_ENGINE - движок базы данных (БД) postgresql: `django.db.backends.postgresql`;
+    - DB_NAME - имя БД: `postgres`;
+    - POSTGRES_USER - пользователь БД: `postgres`;
+    - POSTGRES_PASSWORD - пароль рользователя БД: `postgres`;
+    - DB_HOST - адрес удалённого сервера БД, по умолчанию: `db`;
+    - DB_PORT - порт сервера базы данных: `5432`;
 
-Регистрация пользователя:  
-``` POST /api/v1/auth/signup/ ```  
-Получение данных своей учетной записи:  
-``` GET /api/v1/users/me/ ```  
-Добавление новой категории:  
-``` POST /api/v1/categories/ ```  
-Удаление жанра:  
-``` DELETE /api/v1/genres/{slug} ```  
-Частичное обновление информации о произведении:  
-``` PATCH /api/v1/titles/{titles_id} ```  
-Получение списка всех отзывов:  
-``` GET /api/v1/titles/{title_id}/reviews/ ```   
-Добавление комментария к отзыву:  
-``` POST /api/v1/titles/{title_id}/reviews/{review_id}/comments/ ``` 
+3. Создать и активировать виртуальное пространство, установить зависимости и запустить тесты:
 
-#### Полный список запросов API находятся в документации
+    Для Windows:
+
+    ```python
+    cd yamdb_final
+    python -m venv venv
+    source venv/Scripts/activate
+    cd api_yamdb
+    pip install -r requirements.txt
+    cd ..
+    pytest
+    ```
+
+    Для Mac/Linux:
+
+    ```python
+    cd yamdb_final
+    python3 -m venv venv
+    source venv/bin/activate
+    cd api_yamdb
+    pip install -r requirements.txt
+    cd ..
+    pytest
+    ```
+
+4. Запустить контейнер Docker:
+
+    - Проверить статус Docker:
+
+    ```python
+    docker --version
+    ```
+
+    - Запустить docker-compose:
+
+    ```python
+    cd infra/
+    docker-compose up -d
+    ```
+
+5. Выполнить миграции, создать суперпользователя и мигрировать статику:
+
+    ```python
+    docker-compose exec web python manage.py migrate
+    docker-compose exec web python manage.py createsuperuser
+    docker-compose exec web python manage.py collectstatic --no-input
+    ```
+
+6. Для запуска в виртуальном окружении, после создания и активации виртуального пространства, установки зависимостей, запустить проект локально:
+
+    Для Windows:
+
+    ```python
+    python manage.py runserver
+    ```
+
+    Для Mac/Linux:
+
+    ```python
+    python3 manage.py runserver
+    ```
+
+7. Проверить доступность сервиса:
+
+    ```python
+    http://localhost/admin
+    ```
 
 #### Автор
 
-Дорошенко Кирилл - [https://github.com/TroutBBBoy](https://github.com/TroutBBBoy)      
+Дорошенко Кирилл - [https://github.com/doroshenkokb](https://github.com/doroshenkokb)

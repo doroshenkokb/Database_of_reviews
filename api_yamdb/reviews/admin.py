@@ -10,7 +10,7 @@ class CategoryAdmin(admin.ModelAdmin):
     list_display = (
         'pk',
         'name',
-        'slug'
+        'slug',
     )
     empty_value_display = 'значение отсутствует'
     list_filter = ('name',)
@@ -26,7 +26,7 @@ class GenreAdmin(admin.ModelAdmin):
     list_display = (
         'pk',
         'name',
-        'slug'
+        'slug',
     )
     empty_value_display = 'значение отсутствует'
     list_filter = ('name',)
@@ -45,14 +45,11 @@ class TitleAdmin(admin.ModelAdmin):
         'year',
         'description',
         'category',
-        'get_genre',
-        'count_reviews',
-        'get_rating'
     )
     empty_value_display = 'значение отсутствует'
     list_filter = ('name',)
     list_per_page = settings.PAGE_LIST
-    search_fields = ('name', 'year', 'category')
+    search_fields = ('name', 'year', 'category',)
 
 
 @admin.register(GenreTitle)
@@ -62,7 +59,7 @@ class GenreTitleAdmin(admin.ModelAdmin):
     list_display = (
         'pk',
         'genre',
-        'title'
+        'title',
     )
     empty_value_display = 'значение отсутствует'
     list_filter = ('genre',)
@@ -80,7 +77,7 @@ class ReviewAdmin(admin.ModelAdmin):
         'text',
         'score',
         'pub_date',
-        'title'
+        'title',
     )
     empty_value_display = 'значение отсутствует'
     list_filter = ('author', 'score', 'pub_date')
@@ -97,7 +94,7 @@ class CommentAdmin(admin.ModelAdmin):
         'author',
         'text',
         'pub_date',
-        'review'
+        'review',
     )
     empty_value_display = 'значение отсутствует'
     list_filter = ('author', 'pub_date')
