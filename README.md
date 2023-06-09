@@ -1,7 +1,6 @@
 ![Test and push to Docker Hub](https://github.com/doroshenkokb/yamdb_final/actions/workflows/yamdb_workflow.yml/badge.svg)
 
-# Проект 
-Database_of_reviews по курсу "API: интерфейс взаимодействия программ"
+# Проект Database_of_reviews по курсу "API: интерфейс взаимодействия программ"
 
 ## Описание
 
